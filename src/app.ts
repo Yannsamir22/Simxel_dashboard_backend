@@ -1,0 +1,38 @@
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import routes from "./routes/index.route.js";
+import { errorHandler } from "./middlewares/error.middleware.js";
+
+dotenv.config();
+
+const app = express();
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(cors({
+  // Frontend expects port 4000; CORS allows the Vite dev server
+  origin:      process.env.CORS_ORIGIN || "http://localhost:5173",
+  credentials: true,
+  methods:     ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+// All API routes — NOTE: no /v1/ — frontend calls http://localhost:4000/api/...
+app.use("/api", routes);
+
+// Health check
+app.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true, service: "Simxel Cloud Dashboard", ts: new Date().toISOString() });
+});
+
+// 404
+app.use((_req, res) => {
+  res.status(404).json({ ok: false, error: "Route not found." });
+});
+
+app.use(errorHandler);
+
+export default app;
