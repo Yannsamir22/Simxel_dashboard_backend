@@ -13,10 +13,26 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(cors({
-  // Frontend expects port 4000; CORS allows the Vite dev server
-  origin:      process.env.CORS_ORIGIN || "http://localhost:5173",
+  // In production, set CORS_ORIGIN env var to your Vercel/Netlify frontend URL
+  // e.g. CORS_ORIGIN="https://simxel-dashboard.vercel.app"
+  origin: (origin, callback) => {
+    const allowed = [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:3001",
+      process.env.CORS_ORIGIN,            // production dashboard URL
+      process.env.CORS_ORIGIN_HOME,       // production home site URL
+    ].filter(Boolean) as string[];
+
+    // Allow requests with no origin (e.g. curl, Postman, server-to-server)
+    if (!origin || allowed.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin ${origin} not allowed`));
+    }
+  },
   credentials: true,
-  methods:     ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 

@@ -52,6 +52,10 @@ export class OwnerService {
         });
       } else {
         // Owner exists — verify password before attaching a new business
+        // Google OAuth owners have no passwordHash — guard against null before calling verifyPassword
+        if (!owner.passwordHash) {
+          return { ok: false, error: "This account uses Google Sign-In. Please log in with Google to manage your businesses." };
+        }
         const valid = await verifyPassword(ownerPassword, owner.passwordHash);
         if (!valid) return { ok: false, error: "Invalid credentials for existing owner account." };
       }
@@ -110,6 +114,7 @@ export class OwnerService {
     try {
       const owner = await prisma.owner.findUnique({ where: { id: ownerId } });
       if (!owner) return { ok: false, error: "Owner not found." };
+      if (!owner.passwordHash) return { ok: false, error: "This account uses Google Sign-In and has no password set." };
 
       const valid = await verifyPassword(oldPassword, owner.passwordHash);
       if (!valid) return { ok: false, error: "Old password is incorrect." };
@@ -175,6 +180,7 @@ export class OwnerService {
       // Re-verify owner credentials before allowing a sensitive POS change
       const owner = await prisma.owner.findUnique({ where: { id: ownerId } });
       if (!owner) return { ok: false, error: "Owner not found." };
+      if (!owner.passwordHash) return { ok: false, error: "This account uses Google Sign-In and cannot confirm identity via password." };
 
       const valid = await verifyPassword(ownerPassword, owner.passwordHash);
       if (!valid) return { ok: false, error: "Incorrect owner password. Please confirm your identity." };
@@ -215,6 +221,7 @@ export class OwnerService {
     try {
       const owner = await prisma.owner.findUnique({ where: { id: ownerId } });
       if (!owner) return { ok: false, error: "Owner not found." };
+      if (!owner.passwordHash) return { ok: false, error: "This account uses Google Sign-In and cannot confirm identity via password." };
 
       const valid = await verifyPassword(ownerPassword, owner.passwordHash);
       if (!valid) return { ok: false, error: "Incorrect owner password. Please confirm your identity." };
@@ -351,6 +358,7 @@ export class OwnerService {
     try {
       const owner = await prisma.owner.findUnique({ where: { id: ownerId } });
       if (!owner) return { ok: false, error: "Owner not found." };
+      if (!owner.passwordHash) return { ok: false, error: "This account uses Google Sign-In and cannot confirm identity via password." };
 
       const valid = await verifyPassword(ownerPassword, owner.passwordHash);
       if (!valid) return { ok: false, error: "Incorrect owner password. Please confirm your identity." };

@@ -15,11 +15,31 @@ datasource db {
 model Owner {
   id           String     @id @default(uuid())
   email        String     @unique
-  passwordHash String
+  passwordHash String?
   name         String?
+
+  isVerified    Boolean    @default(false)
+
+  // Google OAuth fields
+  googleId     String? @unique
+  // "EMAIL" | "GOOGLE" | "BOTH"
+  authProvider String  @default("EMAIL")
+  
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
   businesses   Business[]
+}
+
+// One row per OTP send. Old codes for the same email are deleted on resend.
+model OtpCode {
+  id        String   @id @default(uuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
 }
 
 model Business {

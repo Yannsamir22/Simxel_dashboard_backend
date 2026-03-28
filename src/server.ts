@@ -9,7 +9,7 @@ const PORT = process.env.PORT || 4000;
 async function start() {
   try {
     await prisma.$connect();
-    console.log("[DB] Connected to Supabase PostgreSQL.");
+    console.log("[DB] Connected to Database.");
 
     app.listen(PORT, () => {
       console.log(`[SERVER] Simxel Cloud Dashboard running on http://localhost:${PORT}`);
