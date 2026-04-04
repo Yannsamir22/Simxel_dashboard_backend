@@ -98,14 +98,14 @@ export class AuthController {
 
   // POST /api/auth/google
   static async googleAuth(req: Request, res: Response): Promise<void> {
-    const { idToken, businessName } = req.body;
+    const { idToken, businessName, businessType, currency } = req.body;
 
     if (!idToken) {
       res.status(400).json({ ok: false, error: "idToken is required." });
       return;
     }
 
-    const result = await AuthService.googleAuth(idToken, businessName);
+    const result = await AuthService.googleAuth(idToken, businessName, businessType, currency);
 
     if (!result.ok) {
       if (result.error === "BUSINESS_NAME_REQUIRED") {

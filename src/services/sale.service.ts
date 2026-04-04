@@ -144,4 +144,40 @@ export class SaleService {
     }
     return date.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" });
   }
+
+}
+
+
+export function groupSaleItems(items: any[]){
+  const grouped: any[] = [];
+  const packageMap: Record<string, any> = {};
+  
+  for(const item of items) {
+    if(item.type === "PACKAGE" && item.pacakgeId) {
+      if(!packageMap[item.packageId]){
+        packageMap[item.packageId] = {
+          type: "PACKAGE",
+          packageId: item.packageId,
+          package: item.package,
+          total: 0,
+          quantity: 1,
+          services: []
+        }
+        grouped.push(packageMap[item.packageId]);
+      
+      }
+
+      packageMap[item.packageId].total += item.total;
+      packageMap[item.packageId].services.push({
+        name: item.service?.name,
+        share: item.total,
+        employeeId: item.employeeId,
+      })
+    } else{
+      grouped.push(item);
+    
+    }
+  }
+  return grouped;
+
 }

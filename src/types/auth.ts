@@ -8,6 +8,11 @@ export interface OwnerPayload {
   exp?:  number;
 }
 
+export interface AuthRequest extends Request {
+  owner?:      OwnerPayload;
+  businessId?: string;
+}
+
 export interface OwnerRequest extends Request {
   owner?:      OwnerPayload;
   businessId?: string;

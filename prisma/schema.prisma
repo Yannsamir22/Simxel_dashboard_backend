@@ -1,8 +1,3 @@
-// prisma/schema.prisma — Cloud Dashboard Backend
-// Mirrors cloud.prisma from the POS project (same Supabase DB, read-only schema here)
-// DO NOT run prisma migrate from this project — POS owns migrations.
-// Use: npx prisma db push --schema=prisma/schema.prisma  (or db pull to sync)
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -17,20 +12,14 @@ model Owner {
   email        String     @unique
   passwordHash String?
   name         String?
-
-  isVerified    Boolean    @default(false)
-
-  // Google OAuth fields
-  googleId     String? @unique
-  // "EMAIL" | "GOOGLE" | "BOTH"
-  authProvider String  @default("EMAIL")
-  
+  googleId     String?    @unique
+  authProvider String     @default("EMAIL")
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+  isVerified   Boolean    @default(false)
   businesses   Business[]
 }
 
-// One row per OTP send. Old codes for the same email are deleted on resend.
 model OtpCode {
   id        String   @id @default(uuid())
   email     String
@@ -43,24 +32,23 @@ model OtpCode {
 }
 
 model Business {
-  id          String   @id @default(uuid())
-  name        String
-  currency    String   @default("FCFA")
-  secretKey   String   @unique
-  type        String?  @default("SERVICE")
-  ownerId     String
-  owner       Owner    @relation(fields: [ownerId], references: [id])
-  isActivated Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
+  id             String          @id @default(uuid())
+  name           String
+  currency       String          @default("FCFA")
+  secretKey      String          @unique
+  type           String?         @default("SERVICE")
+  ownerId        String
+  isActivated    Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  owner          Owner           @relation(fields: [ownerId], references: [id])
   config         Config?
   users          Employee[]
-  products       Product[]
-  services       Service[]
-  packages       Package[]
-  sales          Sale[]
   expenses       Expense[]
+  packages       Package[]
+  products       Product[]
+  sales          Sale[]
+  services       Service[]
   stockMovements StockMovement[]
 }
 
@@ -69,46 +57,44 @@ model Config {
   mainPasswordHash  String
   adminPasswordHash String
   businessId        String   @unique
-  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   isSynced          Boolean  @default(false)
   updatedAt         DateTime @updatedAt
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
 }
 
 model Employee {
-  id             String    @id @default(uuid())
+  id             String     @id @default(uuid())
   name           String
-  role           String    @default("EMPLOYEE")
-  dateOfBirth    DateTime? @default(now())
-  isSynced       Boolean   @default(false)
-  isDeleted      Boolean   @default(false)
-  commissionRate Float     @default(0.1)
+  role           String     @default("EMPLOYEE")
+  dateOfBirth    DateTime?  @default(now())
+  isSynced       Boolean    @default(false)
+  isDeleted      Boolean    @default(false)
+  commissionRate Float      @default(0.1)
   businessId     String
-  business       Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  updatedAt      DateTime  @updatedAt @default(now())
-  createdAt      DateTime  @default(now())
-
-  salesMade   Sale[]
-  prestations SaleItem[] @relation("Prestations")
+  updatedAt      DateTime   @default(now()) @updatedAt
+  createdAt      DateTime   @default(now())
+  business       Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  salesMade      Sale[]
+  prestations    SaleItem[] @relation("Prestations")
 
   @@unique([businessId, name])
   @@index([businessId])
 }
 
 model Product {
-  id            String    @id @default(uuid())
+  id            String          @id @default(uuid())
   name          String
-  unitCost      Float?    @default(0)
+  unitCost      Float?          @default(0)
   salePrice     Float
-  stock         Int       @default(0)
-  minStockAlert Int       @default(5)
-  isSynced      Boolean   @default(false)
-  isDeleted     Boolean   @default(false)
+  stock         Int             @default(0)
+  minStockAlert Int             @default(5)
+  isSynced      Boolean         @default(false)
+  isDeleted     Boolean         @default(false)
   businessId    String
-  business      Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  updatedAt     DateTime  @updatedAt @default(now())
-
-  sales     SaleItem[]
-  movements StockMovement[]
+  updatedAt     DateTime        @default(now()) @updatedAt
+  business      Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  sales         SaleItem[]
+  movements     StockMovement[]
 
   @@unique([businessId, name])
   @@index([businessId])
@@ -122,42 +108,39 @@ model StockMovement {
   businessId String
   isSynced   Boolean  @default(false)
   createdAt  DateTime @default(now())
-
-  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  Business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  Business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 }
 
 model Service {
-  id         String   @id @default(uuid())
-  name       String
-  price      Float
-  isSynced   Boolean  @default(false)
-  isDeleted  Boolean  @default(false)
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  updatedAt  DateTime @updatedAt @default(now())
-  createdAt  DateTime @default(now())
-
-  SaleItems    SaleItem[]
+  id           String        @id @default(uuid())
+  name         String
+  price        Float
+  isSynced     Boolean       @default(false)
+  isDeleted    Boolean       @default(false)
+  businessId   String
+  updatedAt    DateTime      @default(now()) @updatedAt
+  createdAt    DateTime      @default(now())
   packageItems PackageItem[]
+  SaleItems    SaleItem[]
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
 
   @@unique([businessId, name])
   @@index([businessId])
 }
 
 model Package {
-  id         String   @id @default(uuid())
+  id         String        @id @default(uuid())
   name       String
   price      Float
-  isSynced   Boolean  @default(false)
-  isDeleted  Boolean  @default(false)
+  isSynced   Boolean       @default(false)
+  isDeleted  Boolean       @default(false)
   businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  updatedAt  DateTime @updatedAt @default(now())
-  createdAt  DateTime @default(now())
-
-  items    PackageItem[]
-  saleItem SaleItem[]
+  updatedAt  DateTime      @default(now()) @updatedAt
+  createdAt  DateTime      @default(now())
+  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  items      PackageItem[]
+  saleItem   SaleItem[]
 
   @@unique([businessId, name])
   @@index([businessId])
@@ -166,45 +149,43 @@ model Package {
 model PackageItem {
   id        Int     @id @default(autoincrement())
   packageId String
-  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
   serviceId String
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
   service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
 }
 
 model SaleItem {
-  id            String   @id @default(uuid())
+  id            String    @id @default(uuid())
   type          String
-  quantity      Int      @default(1)
+  quantity      Int       @default(1)
   unitPrice     Float
-  purchasePrice Float    @default(0)
-  total         Float    @default(0)
-  commission    Float    @default(0)
-
-  productId  String?
-  product    Product?  @relation(fields: [productId], references: [id])
-  serviceId  String?
-  service    Service?  @relation(fields: [serviceId], references: [id])
-  packageId  String?
-  package    Package?  @relation(fields: [packageId], references: [id])
-  saleId     String?
-  Sale       Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
-  employeeId String?
-  employee   Employee? @relation("Prestations", fields: [employeeId], references: [id])
+  purchasePrice Float     @default(0)
+  total         Float     @default(0)
+  commission    Float     @default(0)
+  productId     String?
+  serviceId     String?
+  packageId     String?
+  saleId        String?
+  employeeId    String?
+  employee      Employee? @relation("Prestations", fields: [employeeId], references: [id])
+  package       Package?  @relation(fields: [packageId], references: [id])
+  product       Product?  @relation(fields: [productId], references: [id])
+  Sale          Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  service       Service?  @relation(fields: [serviceId], references: [id])
 }
 
 model Sale {
-  id          String   @id @default(uuid())
-  saleDate    DateTime @default(now())
-  totalAmount Float    @default(0)
-  isSynced    Boolean  @default(false)
-  updatedAt   DateTime @default(now()) @updatedAt
+  id          String        @id @default(uuid())
+  saleDate    DateTime      @default(now())
+  totalAmount Float         @default(0)
+  isSynced    Boolean       @default(false)
+  updatedAt   DateTime      @default(now()) @updatedAt
   businessId  String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   employeeId  String?
-  employee    Employee? @relation(fields: [employeeId], references: [id])
-
-  items       SaleItem[]
   paymentType PaymentType[]
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employee    Employee?     @relation(fields: [employeeId], references: [id])
+  items       SaleItem[]
 
   @@index([businessId])
   @@index([saleDate])
@@ -215,9 +196,9 @@ model PaymentType {
   amount    Float
   method    String
   saleId    String?
-  Sale      Sale?    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   isSynced  Boolean  @default(false)
   createdAt DateTime @default(now())
+  Sale      Sale?    @relation(fields: [saleId], references: [id], onDelete: Cascade)
 }
 
 model Expense {

@@ -36,7 +36,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// All API routes — NOTE: no /v1/ — frontend calls http://localhost:4000/api/...
 app.use("/api", routes);
 
 // Health check

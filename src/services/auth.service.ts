@@ -205,7 +205,7 @@ export class AuthService {
   }
 
   // Google OAuth login / register
-  static async googleAuth(idToken: string, businessName?: string) {
+  static async googleAuth(idToken: string, businessName?: string, businessType?: string, currency?: string) {
     // Verify Google token
     let googleUser;
     try {
@@ -243,7 +243,7 @@ export class AuthService {
       return {
         ok: false as const,
         error: "BUSINESS_NAME_REQUIRED",
-        message: "Please provide a  business name to complete your registration.",
+        message: "Please provide a business name to complete your registration.",
         googleUser: { email, name }
       }
     }
@@ -256,12 +256,13 @@ export class AuthService {
         passwordHash: null,
         name: name.trim(),
         googleId,
+        isVerified: true,
         authProvider: "GOOGLE",
         businesses: {
           create: {
             name: businessName.trim(),
-            currency: "FCFA",
-            type: "SERVICE",
+            currency: currency || "FCFA",
+            type: businessType || "SERVICE",
             secretKey
           }
         }
