@@ -7,6 +7,22 @@ datasource db {
   url      = env("CLOUD_DATABASE_URL")
 }
 
+model Notification {
+  id        String   @id @default(uuid())
+  title     String
+  message   String
+  type      String    // "LOW_STOCK" | "SYNC_WARNING" | "WEEKLY_SUMMARY" | "INFO"
+  isRead    Boolean  @default(false)
+  businessId  String
+  createdAt DateTime @default(now())
+
+  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+
+  @@index([businessId, isRead])
+}
+
 model Owner {
   id           String     @id @default(uuid())
   email        String     @unique
@@ -50,6 +66,7 @@ model Business {
   sales          Sale[]
   services       Service[]
   stockMovements StockMovement[]
+  notifications  Notification[]
 }
 
 model Config {

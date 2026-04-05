@@ -1,4 +1,5 @@
 import prisma from "../config/db.js";
+import { formatTimeAgo } from "../helper/formatTime.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 
 export class BusinessService {
@@ -18,17 +19,17 @@ export class BusinessService {
   static async getPosConfigStatus(businessId: string) {
     const config = await prisma.config.findUnique({ where: { businessId } });
     return {
-      exists:      !!config,
-      isSynced:    config?.isSynced ?? false,
+      exists: !!config,
+      isSynced: config?.isSynced ?? false,
       lastUpdated: config?.updatedAt ?? null,
     };
   }
 
   static async resetPosPasswords(businessId: string, mainPassword: string, adminPassword: string) {
-    const mainPasswordHash  = await hashPassword(mainPassword);
+    const mainPasswordHash = await hashPassword(mainPassword);
     const adminPasswordHash = await hashPassword(adminPassword);
     await prisma.config.upsert({
-      where:  { businessId },
+      where: { businessId },
       update: { mainPasswordHash, adminPasswordHash, isSynced: false },
       create: { businessId, mainPasswordHash, adminPasswordHash },
     });
@@ -66,4 +67,43 @@ export class BusinessService {
     await prisma.config.update({ where: { businessId }, data: { adminPasswordHash, isSynced: false } });
     return { ok: true, message: "Admin password updated. Will apply on next sync." };
   }
+
+  // POS sync Status
+  static async getPosSyncStatus(businessId: string) {
+    const latestSale = await prisma.sale.findFirst({
+      where: { businessId },
+      orderBy: { saleDate: "desc" },
+      select: { updatedAt: true }
+
+    });
+    if (!latestSale) {
+      return {
+        status: "never_synced" as const,
+        label: "Never synchronised",
+        lastSyncAt: null,
+        minutesAgo: null,
+        humanReadable: null
+      }
+    }
+
+    const minutesAgo = Math.floor(
+      (Date.now() - new Date(latestSale.updatedAt).getTime()) / 60_000
+    );
+
+    // POS considered offline if last sync > 60 minutes ago
+    const isOnline = minutesAgo < 60;
+
+    return {
+      status: isOnline ? ("online" as const) : ("offline" as const),
+      label: isOnline ? "Online" : "Offline",
+      lastSyncAt: latestSale.updatedAt,
+      minutesAgo,
+      humanReadable: formatTimeAgo(minutesAgo)
+
+    }
+
+  }
 }
+
+
+

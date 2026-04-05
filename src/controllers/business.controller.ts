@@ -53,4 +53,9 @@ export class BusinessController {
     if (!result.ok) { res.status(400).json(result); return; }
     res.status(200).json(result);
   }
+
+  static async getPosSyncStatus(req: OwnerRequest, res: Response): Promise<void> {
+    const data = await BusinessService.getPosSyncStatus(req.businessId!);
+    res.status(200).json({ ok: true, data });
+  }
 }
