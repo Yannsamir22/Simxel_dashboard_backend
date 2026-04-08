@@ -1,5 +1,6 @@
 import prisma from "../config/db.js";
 import { formatTimeAgo } from "../helper/formatTime.js";
+import { createNotification } from "../utils/notification.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 
 export class BusinessService {
@@ -92,6 +93,27 @@ export class BusinessService {
 
     // POS considered offline if last sync > 60 minutes ago
     const isOnline = minutesAgo < 60;
+
+    // Auto-create a SYNC_WARNING NOTIFICATION IF POS has been offline for more than 24 hours
+    if (!isOnline && minutesAgo >= 1440) {
+      const { count } = await prisma.notification.count({
+        where: {
+          businessId,
+          type: "SYNC_WARNING",
+          createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
+        }
+      }) as any;
+
+      // Only create one warning per day to avoid spam
+      if (!count) {
+        await createNotification({
+          businessId,
+          type: "SYNC_WARNING",
+          title: "POS if offline",
+          message: `Your POS has not synchronised since ${formatTimeAgo(minutesAgo)}. Verify your internet.`
+        })
+      }
+    }
 
     return {
       status: isOnline ? ("online" as const) : ("offline" as const),

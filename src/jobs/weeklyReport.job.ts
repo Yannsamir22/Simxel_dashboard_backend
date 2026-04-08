@@ -1,6 +1,7 @@
 import cron from "node-cron"
 import prisma from "../config/db.js"
 import { sendWeeklyReportEmail } from "../utils/email.js"
+import { createNotification } from "../utils/notification.js"
 
 
 export function startWeeklyReportJob(): void {
@@ -114,4 +115,12 @@ async function processReport(
     })
     // Send email
     console.log(`[WeeklyReport] Sent report to ${business.owner.email} for business ${business.name}`);
+
+    // Create notification
+    await createNotification({
+        businessId,
+        title: "Weekly Report",
+        message: `Your Weekly report from ${from.toLocaleDateString("fr-FR")} to ${to.toLocaleDateString("fr-FR")} has been sent to your email for ${business.name}.`,
+        type: "WEEKLY_SUMMARY"
+    })
 }

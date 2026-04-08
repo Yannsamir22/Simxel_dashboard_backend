@@ -19,6 +19,7 @@ app.use(cors({
     const allowed = [
       "http://localhost:5173",
       "http://localhost:5174",
+      "http://192.168.1.196:5173",
       "http://localhost:3001",
       process.env.CORS_ORIGIN,            // production dashboard URL
       process.env.CORS_ORIGIN_HOME,       // production home site URL

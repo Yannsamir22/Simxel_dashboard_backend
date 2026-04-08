@@ -1,34 +1,34 @@
 import nodemailer from "nodemailer";
 
 function getTransporter(): nodemailer.Transporter {
-      const { EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS } = process.env;
+    const { EMAIL_HOST, EMAIL_PORT, EMAIL_USER, EMAIL_PASS } = process.env;
 
-      if (!EMAIL_HOST || !EMAIL_PORT || !EMAIL_USER || !EMAIL_PASS) {
-            throw new Error(
-                  "Email is not configured. Set EMAIL_HOST, EMAIL_PORT, EMAIL_USER, and EMAIL_PASS in the environment variables"
-            );
-      }
+    if (!EMAIL_HOST || !EMAIL_PORT || !EMAIL_USER || !EMAIL_PASS) {
+        throw new Error(
+            "Email is not configured. Set EMAIL_HOST, EMAIL_PORT, EMAIL_USER, and EMAIL_PASS in the environment variables"
+        );
+    }
 
-      const port = Number(EMAIL_PORT) || 587;
+    const port = Number(EMAIL_PORT) || 587;
 
-      // NOTE: rejectUnauthorized: false is needed in development environments
-      // where a firewall, proxy, or antivirus injects its own TLS certificate
-      // into the chain, causing "self-signed certificate in certificate chain".
-      // In production on a clean server (Render, Railway, etc.) this doesn't
-      // usually occur, but leaving it false does no harm.
-      return nodemailer.createTransport({
-            host: EMAIL_HOST,
-            port,
-            secure: port === 465, // true only for port 465 (SMTPS), not 587 (STARTTLS)
-            auth: { user: EMAIL_USER, pass: EMAIL_PASS },
-            tls: {
-                  rejectUnauthorized: false, // allow self-signed certs in corporate/dev networks
-            },
-      });
+    // NOTE: rejectUnauthorized: false is needed in development environments
+    // where a firewall, proxy, or antivirus injects its own TLS certificate
+    // into the chain, causing "self-signed certificate in certificate chain".
+    // In production on a clean server (Render, Railway, etc.) this doesn't
+    // usually occur, but leaving it false does no harm.
+    return nodemailer.createTransport({
+        host: EMAIL_HOST,
+        port,
+        secure: port === 465, // true only for port 465 (SMTPS), not 587 (STARTTLS)
+        auth: { user: EMAIL_USER, pass: EMAIL_PASS },
+        tls: {
+            rejectUnauthorized: false, // allow self-signed certs in corporate/dev networks
+        },
+    });
 }
 
 function buildOtpHtml(code: string, ownerName: string): string {
-      return `
+    return `
       <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -103,45 +103,45 @@ function buildOtpHtml(code: string, ownerName: string): string {
 
 // Send the 6 digit OTP to the given]
 export async function sendOtpEmail(to: string,
-      code: string,
-      ownerName: string
+    code: string,
+    ownerName: string
 ): Promise<void> {
-      const from = process.env.EMAIL_FROM || `"Simxel" <${process.env.EMAIL_USER}>`;
+    const from = process.env.EMAIL_FROM || `"Simxel" <${process.env.EMAIL_USER}>`;
 
-      await getTransporter().sendMail({
-            from,
-            to,
-            subject: `${code} - Your Simxel verification code`,
-            text: `Your Simxel verification code is:  ${code}\n\nIt expires in 15minutes. Do not share it.`,
-            html: buildOtpHtml(code, ownerName)
-      })
+    await getTransporter().sendMail({
+        from,
+        to,
+        subject: `${code} - Your Simxel verification code`,
+        text: `Your Simxel verification code is:  ${code}\n\nIt expires in 15minutes. Do not share it.`,
+        html: buildOtpHtml(code, ownerName)
+    })
 
 
 }
 
 // Weekly Report Email
 interface WeeklyReportData {
-      ownerName: string;
-      businessName: string;
-      currency: string;
-      totalRevenue: number;
-      totalSales: number;
-      totalExpenses: number;
-      netProfit: number;
-      topProductName: string;
-      topServiceName: string;
-      from: Date;
-      to: Date;
+    ownerName: string;
+    businessName: string;
+    currency: string;
+    totalRevenue: number;
+    totalSales: number;
+    totalExpenses: number;
+    netProfit: number;
+    topProductName: string;
+    topServiceName: string;
+    from: Date;
+    to: Date;
 }
 
 function buildWeeklyReportHtml(d: WeeklyReportData): string {
-      const fmt = (n: number) => n.toLocaleString("fr-FR") + " " + d.currency;
-      const dateRange = `${d.from.toLocaleDateString("fr-FR")} - ${d.to.toLocaleDateString("fr-FR")}`;
-      const profit = d.netProfit >= 0;
-      const profitBg = profit ? "#14532d" : "#7f1d1d";
-      const profitLbl = profit ? "Net Profit" : "Net Loss";
+    const fmt = (n: number) => n.toLocaleString("fr-FR") + " " + d.currency;
+    const dateRange = `${d.from.toLocaleDateString("fr-FR")} - ${d.to.toLocaleDateString("fr-FR")}`;
+    const profit = d.netProfit >= 0;
+    const profitBg = profit ? "#14532d" : "#7f1d1d";
+    const profitLbl = profit ? "Net Profit" : "Net Loss";
 
-      return `
+    return `
       <!DOCTYPE html>
 <html lang="fr">
 
@@ -249,14 +249,14 @@ function buildWeeklyReportHtml(d: WeeklyReportData): string {
 }
 
 export async function sendWeeklyReportEmail(to: string,
-      data: WeeklyReportData
+    data: WeeklyReportData
 ): Promise<void> {
-      const from = process.env.EMAIL_FROM || `"Simxel" <${process.env.EMAIL_USER}>`;
+    const from = process.env.EMAIL_FROM || `"Simxel" <${process.env.EMAIL_USER}>`;
 
-      await getTransporter().sendMail({
-            from,
-            to,
-            subject: `${data.businessName} - Weekly Report`,
-            html: buildWeeklyReportHtml(data)
-      })
+    await getTransporter().sendMail({
+        from,
+        to,
+        subject: `${data.businessName} - Weekly Report`,
+        html: buildWeeklyReportHtml(data)
+    })
 }
