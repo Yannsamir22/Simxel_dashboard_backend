@@ -1,6 +1,6 @@
 import { Response } from "express";
-import { NotificationService } from "../services/notification.service";
-import { OwnerRequest } from "../types/auth";
+import { NotificationService } from "../services/notification.service.js";
+import { OwnerRequest } from "../types/auth.js";
 
 export class NotificationController {
   // GET /businesses/:businessId/notifications?unreadOnly=true

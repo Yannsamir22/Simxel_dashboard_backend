@@ -1,4 +1,4 @@
-import prisma from "../config/db";
+import prisma from "../config/db.js";
 import { randomInt } from "crypto";
 const CODE_LENGTH = 6;
 const TTL_MINUTES = 15;
