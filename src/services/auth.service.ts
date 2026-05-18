@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import prisma from "../config/db.js";
 import { sendOtpEmail } from "../utils/email.js";
 import { generateSecretKey } from "../utils/generateSecretKey.js";
@@ -68,18 +69,22 @@ export class AuthService {
 
     const owner = await prisma.owner.create({
       data: {
+        id: randomUUID(),
         email: data.ownerEmail.toLowerCase(),
         passwordHash,
         name: data.ownerName?.trim() || "",
         isVerified: false,
         authProvider: "EMAIL",
+        updatedAt: new Date(),
         businesses: {
-          create: {
+          create: [{
+            id: randomUUID(),
             name: data.businessName.trim(),
             currency: data.currency || "FCFA",
             type: data.businessType || "SERVICE",
             secretKey,
-          },
+            updatedAt: new Date(),
+          }],
         },
       },
       include: { businesses: true },
@@ -90,7 +95,7 @@ export class AuthService {
       const { code } = await createOTP(email, { skipCooldown: true });
       await sendOtpEmail(email, code, data.ownerName || "")
     } catch (error) {
-      await prisma.business.deleteMany({ where: { owner: { email } } })
+      await prisma.business.deleteMany({ where: { ownerId: owner.id } })
       await prisma.owner.delete({ where: { email } });
       console.error("[OTP]  Email send failed:", error);
       return {
@@ -136,7 +141,7 @@ export class AuthService {
       data: { isVerified: true }
     })
 
-    const secretKey = owner.businesses[0]?.secretKey ?? null;
+    const secretKey = (owner as any).businesses[0]?.secretKey ?? null;
 
     return {
       ...buildAuthResponse(owner, owner.businesses),
@@ -252,19 +257,23 @@ export class AuthService {
 
     const newOwner = await prisma.owner.create({
       data: {
+        id: randomUUID(),
         email: email.toLowerCase(),
         passwordHash: null,
         name: name.trim(),
         googleId,
         isVerified: true,
         authProvider: "GOOGLE",
+        updatedAt: new Date(),
         businesses: {
-          create: {
+          create: [{
+            id: randomUUID(),
             name: businessName.trim(),
             currency: currency || "FCFA",
             type: businessType || "SERVICE",
-            secretKey
-          }
+            secretKey,
+            updatedAt: new Date(),
+          }]
         }
       },
       include: { businesses: true }

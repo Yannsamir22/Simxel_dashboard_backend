@@ -1,10 +1,46 @@
 import prisma from "../config/db.js";
 
 const SALE_INCLUDE = {
-  items: {
-    include: { product: true, service: true, package: true, employee: true },
+  saleItems: {
+    include: {
+      product: {
+        select: {
+          id: true,
+          name: true,
+          salePrice: true,
+          unitCost: true,
+          stock: true,
+          minStockAlert: true,
+          barcode: true,
+          businessId: true,
+          // Omit createdAt if it causes issues in some environments
+        }
+      },
+      service: {
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          businessId: true,
+        }
+      },
+      package: {
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          businessId: true,
+        }
+      },
+      employee: {
+        select: {
+          id: true,
+          name: true,
+        }
+      },
+    },
   },
-  paymentType: true,
+  paymentTypes: true,
   employee: { select: { id: true, name: true } },
 };
 
@@ -51,8 +87,23 @@ export class SaleService {
     const sales = await prisma.sale.findMany({
       where: { businessId, saleDate: { gte: start, lte: end } },
       include: {
-        items:       { include: { product: true, service: true, package: true, employee: true } },
-        paymentType: true,
+        saleItems: {
+          include: {
+            product: {
+              select: { id: true, name: true, salePrice: true, unitCost: true, stock: true, barcode: true }
+            },
+            service: {
+              select: { id: true, name: true, price: true }
+            },
+            package: {
+              select: { id: true, name: true, price: true }
+            },
+            employee: {
+              select: { id: true, name: true }
+            }
+          }
+        },
+        paymentTypes: true,
       },
     });
 
@@ -63,7 +114,7 @@ export class SaleService {
     // Payment breakdown
     const payments: Record<string, number> = { CASH: 0, OM: 0, MOMO: 0, CARD: 0 };
     sales.forEach((sale) => {
-      (sale.paymentType as any[]).forEach((p) => {
+      (sale.paymentTypes as any[]).forEach((p) => {
         payments[p.method] = (payments[p.method] || 0) + p.amount;
       });
     });
@@ -71,7 +122,7 @@ export class SaleService {
     // Top items
     const itemMap: Record<string, { name: string; type: string; revenue: number; quantity: number }> = {};
     sales.forEach((sale) => {
-      (sale.items as any[]).forEach((item) => {
+      (sale.saleItems as any[]).forEach((item) => {
         let name = "Unknown", type = "UNKNOWN", key = "";
         if (item.product)       { name = item.product.name;  type = "PRODUCT";  key = `p-${item.product.id}`;  }
         else if (item.service)  { name = item.service.name;  type = "SERVICE";  key = `s-${item.service.id}`;  }
@@ -91,7 +142,7 @@ export class SaleService {
     // Top employees
     const empMap: Record<string, { name: string; revenue: number }> = {};
     sales.forEach((sale) => {
-      (sale.items as any[]).forEach((item) => {
+      (sale.saleItems as any[]).forEach((item) => {
         if (!item.employee) return;
         const id = item.employee.id;
         if (!empMap[id]) empMap[id] = { name: item.employee.name, revenue: 0 };
@@ -153,7 +204,7 @@ export function groupSaleItems(items: any[]){
   const packageMap: Record<string, any> = {};
   
   for(const item of items) {
-    if(item.type === "PACKAGE" && item.pacakgeId) {
+    if(item.type === "PACKAGE" && item.packageId) {
       if(!packageMap[item.packageId]){
         packageMap[item.packageId] = {
           type: "PACKAGE",

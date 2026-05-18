@@ -4,14 +4,14 @@ export class ReportService {
   static async getSalesSummary(businessId: string, startDate: Date, endDate: Date) {
     const sales = await prisma.sale.findMany({
       where: { businessId, saleDate: { gte: startDate, lte: endDate } },
-      include: { paymentType: true },
+      include: { paymentTypes: true },
     });
     const totalRevenue      = sales.reduce((s, sale) => s + sale.totalAmount, 0);
     const totalTransactions = sales.length;
     const avgTransaction    = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
     const paymentBreakdown: Record<string, number> = {};
     sales.forEach((sale) => {
-      (sale.paymentType as any[]).forEach((p) => {
+      (sale.paymentTypes as any[]).forEach((p) => {
         paymentBreakdown[p.method] = (paymentBreakdown[p.method] || 0) + p.amount;
       });
     });
@@ -21,11 +21,11 @@ export class ReportService {
   static async getTopItems(businessId: string, startDate: Date, endDate: Date, limit = 10) {
     const sales = await prisma.sale.findMany({
       where: { businessId, saleDate: { gte: startDate, lte: endDate } },
-      include: { items: { include: { product: true, service: true, package: true } } },
+      include: { saleItems: { include: { product: true, service: true, package: true } } },
     });
     const stats: Record<string, { name: string; type: string; quantity: number; revenue: number }> = {};
     sales.forEach((sale) => {
-      (sale.items as any[]).forEach((item) => {
+      (sale.saleItems as any[]).forEach((item) => {
         let name = "?", key = "", type = "";
         if      (item.product) { name = item.product.name; key = `p-${item.product.id}`;  type = "PRODUCT"; }
         else if (item.service) { name = item.service.name; key = `s-${item.service.id}`;  type = "SERVICE"; }
@@ -43,15 +43,15 @@ export class ReportService {
     const employees = await prisma.employee.findMany({
       where: { businessId, isDeleted: false },
       include: {
-        prestations: {
-          where: { Sale: { saleDate: { gte: startDate, lte: endDate } } },
-          include: { Sale: true },
+        saleItems: {
+          where: { sale: { saleDate: { gte: startDate, lte: endDate } } },
+          include: { sale: true },
         },
       },
     });
     return employees
       .map((emp) => {
-        const pres           = (emp.prestations as any[]).filter((p) => p.Sale !== null);
+        const pres           = emp.saleItems.filter((p: any) => p.sale !== null);
         const totalGenerated = pres.reduce((s: number, p: any) => s + (p.total || 0), 0);
         const commission     = Math.round(pres.reduce((s: number, p: any) => s + (p.commission || 0), 0));
         return { employeeId: emp.id, employeeName: emp.name, prestationCount: pres.length, totalGenerated, commission };
@@ -64,7 +64,7 @@ export class ReportService {
     const [sales, expenses] = await prisma.$transaction([
       prisma.sale.findMany({
         where: { businessId, saleDate: { gte: startDate, lte: endDate } },
-        include: { items: true, paymentType: true },
+        include: { saleItems: true, paymentTypes: true },
       }),
       prisma.expense.findMany({
         where: { businessId, isDeleted: false, date: { gte: startDate, lte: endDate } },
@@ -72,7 +72,7 @@ export class ReportService {
     ]);
     const totalRevenue  = sales.reduce((s, sale) => s + sale.totalAmount, 0);
     const productCost   = sales.reduce((s, sale) =>
-      s + (sale.items as any[]).reduce((ss: number, item: any) => ss + (item.purchasePrice || 0) * (item.quantity || 1), 0), 0);
+      s + (sale.saleItems as any[]).reduce((ss: number, item: any) => ss + (item.purchasePrice || 0) * (item.quantity || 1), 0), 0);
     const totalExpenses = expenses.reduce((s, e) => s + e.amount, 0);
     const expenseBreakdown: Record<string, number> = {};
     expenses.forEach((e) => { expenseBreakdown[e.type] = (expenseBreakdown[e.type] || 0) + e.amount; });
@@ -103,8 +103,8 @@ export class ReportService {
     return prisma.sale.findMany({
       where: { businessId, saleDate: { gte: startDate, lte: endDate } },
       include: {
-        items:       { include: { product: true, service: true, package: true } },
-        paymentType: true,
+        saleItems:       { include: { product: true, service: true, package: true } },
+        paymentTypes: true,
         employee:    { select: { name: true } },
       },
       orderBy: { saleDate: "asc" },

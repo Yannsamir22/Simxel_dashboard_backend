@@ -76,11 +76,11 @@ export async function generateSalesJournalExcel(sales: any[], businessName: stri
   sheet.getRow(3).height = 20;
 
   sales.forEach((sale, i) => {
-    const articles = (sale.items ?? []).map((item: any) =>
+    const articles = (sale.saleItems ?? []).map((item: any) =>
       `${item.product?.name ?? item.service?.name ?? item.package?.name ?? "?"} (x${item.quantity || 1})`
     ).join(", ") || "—";
 
-    const payments = (sale.paymentType ?? []).map((p: any) => `${p.method}: ${fmtCur(p.amount)}`).join(" / ") || "—";
+    const payments = (sale.paymentTypes ?? []).map((p: any) => `${p.method}: ${fmtCur(p.amount)}`).join(" / ") || "—";
 
     const row = sheet.addRow([
       fmtDate(sale.saleDate),
@@ -115,7 +115,7 @@ export async function generateStaffPerformanceExcel(
     { key: "gen",   width: 22 },
     { key: "comm",  width: 22 },
   ];
-  const period = `${fmtDate(startDate)} → ${fmtDate(endDate)}`;
+  const period = `${fmtDate(startDate)} -> ${fmtDate(endDate)}`;
   addTitleBlock(sheet, 4, "RAPPORT DE PERFORMANCE STAFF", `${businessName}  ·  ${period}`);
   const hRow = sheet.addRow(["EMPLOYÉ", "PRESTATIONS", "CHIFFRE D'AFFAIRES", "COMMISSION"]);
   hRow.eachCell((c) => styleHeader(c, HEADER_GREEN));
@@ -176,7 +176,7 @@ export async function generateFinancialBalanceExcel(
   const wb    = new ExcelJS.Workbook();
   const sheet = wb.addWorksheet("Bilan Financier");
   sheet.columns = [{ key: "label", width: 32 }, { key: "amount", width: 24 }];
-  const period = `${fmtDate(startDate)} → ${fmtDate(endDate)}`;
+  const period = `${fmtDate(startDate)} -> ${fmtDate(endDate)}`;
   addTitleBlock(sheet, 2, "BILAN FINANCIER", `${businessName}  ·  ${period}`);
 
   const addSection = (title: string, rows: [string, number][], bg: string) => {

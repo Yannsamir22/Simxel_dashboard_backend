@@ -2,6 +2,7 @@ import { Response, NextFunction } from "express";
 import { verifyOwnerToken } from "../utils/jwt.js";
 import { OwnerRequest } from "../types/auth.js";
 import prisma from "../config/db.js";
+import { sanitizeDatabaseError } from "../utils/sanitize.js";
 
 // 1. Verify JWT — inject req.owner
 export const requireOwner = (req: OwnerRequest, res: Response, next: NextFunction): void => {
@@ -20,7 +21,7 @@ export const requireOwner = (req: OwnerRequest, res: Response, next: NextFunctio
 
 // 2. Verify business ownership — inject req.businessId
 export const requireBusiness = async (req: OwnerRequest, res: Response, next: NextFunction): Promise<void> => {
-  const { businessId } = req.params;
+  const businessId = req.params.businessId as string;
   if (!businessId) {
     res.status(400).json({ ok: false, error: "businessId is required." });
     return;
@@ -38,6 +39,6 @@ export const requireBusiness = async (req: OwnerRequest, res: Response, next: Ne
     req.businessId = businessId;
     next();
   } catch (error) {
-    res.status(500).json({ ok: false, error: (error as Error).message });
+    res.status(500).json({ ok: false, error: sanitizeDatabaseError(error) });
   }
 };

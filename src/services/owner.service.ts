@@ -6,6 +6,7 @@
 import prisma from "../config/db.js";
 import { hashPassword, verifyPassword } from "../utils/password.js";
 import { generateSecretKey } from "../utils/generateSecretKey.js";
+import { sanitizeDatabaseError } from "../utils/sanitize.js";
 
 // ─── Business Registration ─────────────────────────────────────────────────
 
@@ -92,7 +93,7 @@ export class OwnerService {
       };
     } catch (error) {
       console.error("[OwnerService.registerBusiness]", error);
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 
@@ -127,7 +128,7 @@ export class OwnerService {
 
       return { ok: true, message: "Owner password updated successfully." };
     } catch (error) {
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 
@@ -156,7 +157,7 @@ export class OwnerService {
 
       return { ok: true, config };
     } catch (error) {
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 
@@ -199,7 +200,7 @@ export class OwnerService {
 
       return { ok: true, message: "POS manager password updated. The POS will apply it on next sync." };
     } catch (error) {
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 
@@ -237,7 +238,7 @@ export class OwnerService {
 
       return { ok: true, message: "POS admin password updated. The POS will apply it on next sync." };
     } catch (error) {
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 
@@ -268,7 +269,7 @@ export class OwnerService {
 
       return { ok: true, business };
     } catch (error) {
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 
@@ -292,7 +293,7 @@ export class OwnerService {
       });
       return { ok: true, businesses };
     } catch (error) {
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 
@@ -335,7 +336,7 @@ export class OwnerService {
         },
       };
     } catch (error) {
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 
@@ -378,7 +379,7 @@ export class OwnerService {
 
       return { ok: true, message: "Both POS passwords reset. The POS will apply them on next sync." };
     } catch (error) {
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 
@@ -402,7 +403,7 @@ export class OwnerService {
       if (!business) return { ok: false, error: "Business not found." };
       return { ok: true, business };
     } catch (error) {
-      return { ok: false, error: (error as Error).message };
+      return { ok: false, error: sanitizeDatabaseError(error) };
     }
   }
 }

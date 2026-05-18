@@ -8,6 +8,7 @@ import {
   generateFinancialBalanceExcel,
 } from "../utils/excel.helper.js";
 import prisma from "../config/db.js";
+import { sanitizeDatabaseError } from "../utils/sanitize.js";
 
 function parseDates(req: OwnerRequest, res: Response): { startDate: Date; endDate: Date } | null {
   const { startDate, endDate } = req.query;
@@ -76,7 +77,7 @@ export class ReportController {
       const sales    = await ReportService.getSalesJournal(req.businessId!, dates.startDate, dates.endDate);
       const buffer   = await generateSalesJournalExcel(sales ?? [], business?.name || "Simxel");
       sendExcel(res, buffer, `Journal_Ventes_${dates.startDate.toISOString().split("T")[0]}.xlsx`);
-    } catch (e) { res.status(500).json({ ok: false, error: (e as Error).message }); }
+    } catch (e) { res.status(500).json({ ok: false, error: sanitizeDatabaseError(e) }); }
   }
 
   static async exportStaffPerformance(req: OwnerRequest, res: Response): Promise<void> {
@@ -87,7 +88,7 @@ export class ReportController {
       const staffData  = await ReportService.getStaffPerformance(req.businessId!, dates.startDate, dates.endDate);
       const buffer     = await generateStaffPerformanceExcel(staffData ?? [], business?.name || "Simxel", dates.startDate, dates.endDate);
       sendExcel(res, buffer, `Performance_Staff_${dates.startDate.toISOString().split("T")[0]}.xlsx`);
-    } catch (e) { res.status(500).json({ ok: false, error: (e as Error).message }); }
+    } catch (e) { res.status(500).json({ ok: false, error: sanitizeDatabaseError(e) }); }
   }
 
   static async exportStockStatus(req: OwnerRequest, res: Response): Promise<void> {
@@ -96,7 +97,7 @@ export class ReportController {
       const stockData = await ReportService.getStockStatus(req.businessId!);
       const buffer    = await generateStockStatusExcel(stockData ?? [], business?.name || "Simxel");
       sendExcel(res, buffer, `Etat_Stocks_${new Date().toISOString().split("T")[0]}.xlsx`);
-    } catch (e) { res.status(500).json({ ok: false, error: (e as Error).message }); }
+    } catch (e) { res.status(500).json({ ok: false, error: sanitizeDatabaseError(e) }); }
   }
 
   static async exportFinancialBalance(req: OwnerRequest, res: Response): Promise<void> {
@@ -112,6 +113,6 @@ export class ReportController {
         dates.endDate,
       );
       sendExcel(res, buffer, `Bilan_Financier_${dates.startDate.toISOString().split("T")[0]}.xlsx`);
-    } catch (e) { res.status(500).json({ ok: false, error: (e as Error).message }); }
+    } catch (e) { res.status(500).json({ ok: false, error: sanitizeDatabaseError(e) }); }
   }
 }
