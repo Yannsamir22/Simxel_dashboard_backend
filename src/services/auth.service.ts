@@ -133,7 +133,7 @@ export class AuthService {
 
     const result = await verifyOtp(normalizedEmail, code.trim());
     if (!result.valid) {
-      return { ok: false as const, error: result.error }
+      return { ok: false as const, error: (result as any).error }
     }
     // marlk owner as verified
     await prisma.owner.update({

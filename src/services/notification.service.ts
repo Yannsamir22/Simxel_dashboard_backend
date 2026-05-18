@@ -1,5 +1,5 @@
-import prisma from "../config/db";
-import { BusinessService } from "./business.service";
+import prisma from "../config/db.js";
+import { BusinessService } from "./business.service.js";
 
 export class NotificationService {
   // Get all notifications for a business (newest first)

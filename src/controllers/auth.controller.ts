@@ -28,7 +28,7 @@ export class AuthController {
       businessType,
       currency,
     });
-    if (!result.ok) {
+    if (!result.ok ) {
       const status = result.error.includes("already exists") ? 409 : 400;
       res.status(status).json(result);
       return;
@@ -108,7 +108,7 @@ export class AuthController {
     const result = await AuthService.googleAuth(idToken, businessName, businessType, currency);
 
     if (!result.ok) {
-      if (result.error === "BUSINESS_NAME_REQUIRED") {
+      if ((result as any).error === "BUSINESS_NAME_REQUIRED") {
         res.status(200).json(result); // 200 so the frontend can handle the UI step
         return;
       }

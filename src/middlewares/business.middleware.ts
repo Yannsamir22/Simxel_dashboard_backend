@@ -1,5 +1,5 @@
 import { NextFunction, Response } from "express";
-import prisma from "../config/db";
+import prisma from "../config/db.js";
 import { AuthRequest } from "../types/auth.js";
 
 export async function requireBusinessAccess(req: AuthRequest, res: Response, next: NextFunction) {
