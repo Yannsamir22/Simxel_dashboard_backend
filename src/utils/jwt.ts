@@ -8,7 +8,7 @@ const secret = () => {
 };
 
 export const signOwnerToken = (payload: Omit<OwnerPayload, "iat" | "exp">): string =>
-  jwt.sign(payload, secret(), { expiresIn: process.env.JWT_EXPIRES_IN || "7d" });
+  jwt.sign({ ...payload }, secret(), { expiresIn: (process.env.JWT_EXPIRES_IN || "7d") as any });
 
 export const verifyOwnerToken = (token: string): OwnerPayload =>
   jwt.verify(token, secret()) as OwnerPayload;

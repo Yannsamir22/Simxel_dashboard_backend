@@ -67,7 +67,7 @@ async function processReport(
     // Top product
     const topProduct = await prisma.saleItem.groupBy({
         by: ["productId"],
-        where: { Sale: { businessId, saleDate: { gte: from, lte: to } } },
+        where: { sale: { businessId, saleDate: { gte: from, lte: to } } },
         _sum: { quantity: true },
         orderBy: { _sum: { quantity: "desc" } },
         take: 1
@@ -85,7 +85,7 @@ async function processReport(
     // Top service
     const topService = await prisma.saleItem.groupBy({
         by: ["serviceId"],
-        where: { Sale: { businessId, saleDate: { gte: from, lte: to } } },
+        where: { sale: { businessId, saleDate: { gte: from, lte: to } } },
         _sum: { quantity: true },
         orderBy: { _sum: { quantity: "desc" } },
         take: 1

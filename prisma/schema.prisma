@@ -7,33 +7,124 @@ datasource db {
   url      = env("CLOUD_DATABASE_URL")
 }
 
-model Notification {
-  id        String   @id @default(uuid())
-  title     String
-  message   String
-  type      String    // "LOW_STOCK" | "SYNC_WARNING" | "WEEKLY_SUMMARY" | "INFO"
-  isRead    Boolean  @default(false)
-  businessId  String
-  createdAt DateTime @default(now())
-
-  business Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-
-  @@index([businessId])
-
-  @@index([businessId, isRead])
-}
+// ─────────────────────────────────────────────────────────────
+//  CORE DOMAIN
+// ─────────────────────────────────────────────────────────────
 
 model Owner {
-  id           String     @id @default(uuid())
-  email        String     @unique
-  passwordHash String?
-  name         String?
-  googleId     String?    @unique
-  authProvider String     @default("EMAIL")
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
-  isVerified   Boolean    @default(false)
-  businesses   Business[]
+  id                   String               @id @default(uuid())
+  email                String               @unique
+  passwordHash         String?
+  name                 String?
+  googleId             String?              @unique
+  authProvider         String               @default("EMAIL")
+  isVerified           Boolean              @default(false)
+  refreshToken         String?
+  banReason            String?
+  bannedAt             DateTime?
+  lastLoginAt          DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  // Relations
+  businesses           Business[]
+  auditLogs            AuditLog[]           @relation("AuditPerformer")
+  createdNotifications SystemNotification[] @relation("NotificationCreator")
+}
+
+model Business {
+  id                   String               @id @default(uuid())
+  name                 String
+  currency             String               @default("FCFA")
+  secretKey            String               @unique
+  type                 String?              @default("SERVICE")
+  ownerId              String
+  isActivated          Boolean              @default(false)
+  dashboardExpiresAt   DateTime?
+  planType             String               @default("PENDING")
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+
+  // Relations
+  owner                Owner                @relation(fields: [ownerId], references: [id])
+  config               Config?
+  employees            Employee[]
+  expenses             Expense[]
+  notifications        Notification[]
+  packages             Package[]
+  products             Product[]
+  sales                Sale[]
+  services             Service[]
+  stockMovements       StockMovement[]
+  systemNotifications  SystemNotification[]
+}
+
+// ─────────────────────────────────────────────────────────────
+//  POS MODELS
+// ─────────────────────────────────────────────────────────────
+
+model Config {
+  id                String   @id @default(uuid())
+  mainPasswordHash  String
+  adminPasswordHash String
+  businessId        String   @unique
+  isSynced          Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+}
+
+model Employee {
+  id             String     @id @default(uuid())
+  name           String
+  role           String     @default("EMPLOYEE")
+  dateOfBirth    DateTime?
+  isSynced       Boolean    @default(false)
+  isDeleted      Boolean    @default(false)
+  commissionRate Float      @default(0.1)
+  businessId     String
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  business       Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  sales          Sale[]
+  saleItems      SaleItem[]
+
+  @@unique([businessId, name])
+  @@index([businessId])
+}
+
+model Expense {
+  id         String   @id @default(uuid())
+  type       String
+  note       String?
+  amount     Float    @default(0)
+  isSynced   Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+  date       DateTime @default(now())
+  businessId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+}
+
+// POS-level notification (per-business, read inside the POS app)
+model Notification {
+  id         String   @id @default(uuid())
+  title      String
+  message    String
+  type       String
+  isRead     Boolean  @default(false)
+  businessId String
+  createdAt  DateTime @default(now())
+
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([businessId])
+  @@index([businessId, isRead])
 }
 
 model OtpCode {
@@ -47,55 +138,42 @@ model OtpCode {
   @@index([email])
 }
 
-model Business {
-  id             String          @id @default(uuid())
-  name           String
-  currency       String          @default("FCFA")
-  secretKey      String          @unique
-  type           String?         @default("SERVICE")
-  ownerId        String
-  isActivated    Boolean         @default(false)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  owner          Owner           @relation(fields: [ownerId], references: [id])
-  config         Config?
-  users          Employee[]
-  expenses       Expense[]
-  packages       Package[]
-  products       Product[]
-  sales          Sale[]
-  services       Service[]
-  stockMovements StockMovement[]
-  notifications  Notification[]
-}
+model Package {
+  id          String        @id @default(uuid())
+  name        String
+  price       Float
+  isSynced    Boolean       @default(false)
+  isDeleted   Boolean       @default(false)
+  businessId  String
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-model Config {
-  id                String   @id @default(uuid())
-  mainPasswordHash  String
-  adminPasswordHash String
-  businessId        String   @unique
-  isSynced          Boolean  @default(false)
-  updatedAt         DateTime @updatedAt
-  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-}
-
-model Employee {
-  id             String     @id @default(uuid())
-  name           String
-  role           String     @default("EMPLOYEE")
-  dateOfBirth    DateTime?  @default(now())
-  isSynced       Boolean    @default(false)
-  isDeleted      Boolean    @default(false)
-  commissionRate Float      @default(0.1)
-  businessId     String
-  updatedAt      DateTime   @default(now()) @updatedAt
-  createdAt      DateTime   @default(now())
-  business       Business   @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  salesMade      Sale[]
-  prestations    SaleItem[] @relation("Prestations")
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  packageItems PackageItem[]
+  saleItems   SaleItem[]
 
   @@unique([businessId, name])
   @@index([businessId])
+}
+
+model PackageItem {
+  id        Int     @id @default(autoincrement())
+  packageId String
+  serviceId String
+
+  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
+  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+}
+
+model PaymentType {
+  id        String   @id @default(uuid())
+  amount    Float
+  method    String
+  saleId    String?
+  isSynced  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  sale      Sale?    @relation(fields: [saleId], references: [id], onDelete: Cascade)
 }
 
 model Product {
@@ -107,68 +185,35 @@ model Product {
   minStockAlert Int             @default(5)
   isSynced      Boolean         @default(false)
   isDeleted     Boolean         @default(false)
+  barcode       String?         @unique
   businessId    String
-  updatedAt     DateTime        @default(now()) @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
   business      Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  sales         SaleItem[]
-  movements     StockMovement[]
+  saleItems     SaleItem[]
+  stockMovements StockMovement[]
 
   @@unique([businessId, name])
   @@index([businessId])
 }
 
-model StockMovement {
-  id         String   @id @default(uuid())
-  productId  String
-  quantity   Int
-  type       String
-  businessId String
-  isSynced   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  Business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-}
+model Sale {
+  id          String        @id @default(uuid())
+  saleDate    DateTime      @default(now())
+  totalAmount Float         @default(0)
+  isSynced    Boolean       @default(false)
+  businessId  String
+  employeeId  String?
+  updatedAt   DateTime      @updatedAt
 
-model Service {
-  id           String        @id @default(uuid())
-  name         String
-  price        Float
-  isSynced     Boolean       @default(false)
-  isDeleted    Boolean       @default(false)
-  businessId   String
-  updatedAt    DateTime      @default(now()) @updatedAt
-  createdAt    DateTime      @default(now())
-  packageItems PackageItem[]
-  SaleItems    SaleItem[]
-  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employee    Employee?     @relation(fields: [employeeId], references: [id])
+  paymentTypes PaymentType[]
+  saleItems   SaleItem[]
 
-  @@unique([businessId, name])
   @@index([businessId])
-}
-
-model Package {
-  id         String        @id @default(uuid())
-  name       String
-  price      Float
-  isSynced   Boolean       @default(false)
-  isDeleted  Boolean       @default(false)
-  businessId String
-  updatedAt  DateTime      @default(now()) @updatedAt
-  createdAt  DateTime      @default(now())
-  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  items      PackageItem[]
-  saleItem   SaleItem[]
-
-  @@unique([businessId, name])
-  @@index([businessId])
-}
-
-model PackageItem {
-  id        Int     @id @default(autoincrement())
-  packageId String
-  serviceId String
-  package   Package @relation(fields: [packageId], references: [id], onDelete: Cascade)
-  service   Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  @@index([saleDate])
 }
 
 model SaleItem {
@@ -184,52 +229,83 @@ model SaleItem {
   packageId     String?
   saleId        String?
   employeeId    String?
-  employee      Employee? @relation("Prestations", fields: [employeeId], references: [id])
+
+  employee      Employee? @relation(fields: [employeeId], references: [id])
   package       Package?  @relation(fields: [packageId], references: [id])
   product       Product?  @relation(fields: [productId], references: [id])
-  Sale          Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  sale          Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
   service       Service?  @relation(fields: [serviceId], references: [id])
 }
 
-model Sale {
+model Service {
   id          String        @id @default(uuid())
-  saleDate    DateTime      @default(now())
-  totalAmount Float         @default(0)
+  name        String
+  price       Float
   isSynced    Boolean       @default(false)
-  updatedAt   DateTime      @default(now()) @updatedAt
+  isDeleted   Boolean       @default(false)
   businessId  String
-  employeeId  String?
-  paymentType PaymentType[]
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
   business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  employee    Employee?     @relation(fields: [employeeId], references: [id])
-  items       SaleItem[]
+  packageItems PackageItem[]
+  saleItems   SaleItem[]
 
+  @@unique([businessId, name])
   @@index([businessId])
-  @@index([saleDate])
 }
 
-model PaymentType {
-  id        String   @id @default(uuid())
-  amount    Float
-  method    String
-  saleId    String?
-  isSynced  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  Sale      Sale?    @relation(fields: [saleId], references: [id], onDelete: Cascade)
-}
-
-model Expense {
+model StockMovement {
   id         String   @id @default(uuid())
+  productId  String
+  quantity   Int
   type       String
-  note       String?
-  amount     Float    @default(0)
-  isSynced   Boolean  @default(false)
-  isDeleted  Boolean  @default(false)
-  date       DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
-  createdAt  DateTime @default(now())
   businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  isSynced   Boolean  @default(false)
+  createdAt  DateTime @default(now())
 
-  @@index([businessId])
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────────────────────────────────────
+//  SUPER ADMIN MODELS
+// ─────────────────────────────────────────────────────────────
+
+// Platform-wide notification sent from the super admin dashboard
+model SystemNotification {
+  id               String    @id @default(cuid())
+  title            String
+  message          String
+  type             String    @default("INFO")   // INFO | WARNING | DANGER | SUCCESS
+  isGlobal         Boolean   @default(false)    // true = all businesses see it
+  targetBusinessId String?
+  createdBy        String
+  createdAt        DateTime  @default(now())
+  expiresAt        DateTime?
+
+  creator          Owner     @relation("NotificationCreator", fields: [createdBy], references: [id])
+  targetBusiness   Business? @relation(fields: [targetBusinessId], references: [id])
+
+  @@index([isGlobal])
+  @@index([targetBusinessId])
+  @@index([createdAt])
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  action      String
+  targetId    String?
+  targetType  String?
+  performedBy String
+  reason      String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  performer   Owner    @relation("AuditPerformer", fields: [performedBy], references: [id])
+
+  @@index([action])
+  @@index([performedBy])
+  @@index([targetId])
+  @@index([createdAt])
 }

@@ -47,4 +47,10 @@ export class NotificationController {
     console.log("Notifications cleared.");
     res.json({ ok: true, message: ` notifications cleared.` });
   }
+
+  static async getSystemNotification(req: OwnerRequest, res: Response): Promise<void> {
+    const result = await NotificationService.getSystemNotification(req.businessId!);
+
+    res.json({ok: true, ...result})
+  }
 }

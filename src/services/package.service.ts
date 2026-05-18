@@ -1,6 +1,6 @@
 import prisma from "../config/db.js";
 
-const INCLUDE = { items: { include: { service: true } } };
+const INCLUDE = { packageItems: { include: { service: true } } };
 
 export class PackageService {
   static getAll(businessId: string) {
@@ -22,7 +22,7 @@ export class PackageService {
         price: data.price,
         businessId,
         isSynced: false,
-        items: { create: data.serviceIds.map((sid) => ({ service: { connect: { id: sid } } })) },
+        packageItems: { create: data.serviceIds.map((sid) => ({ service: { connect: { id: sid } } })) },
       },
       include: INCLUDE,
     });
@@ -33,7 +33,7 @@ export class PackageService {
     if (data.name  !== undefined) payload.name  = data.name.trim();
     if (data.price !== undefined) payload.price = data.price;
     if (Array.isArray(data.serviceIds)) {
-      payload.items = {
+      payload.packageItems = {
         deleteMany: {},
         create: data.serviceIds.map((sid) => ({ service: { connect: { id: sid } } })),
       };

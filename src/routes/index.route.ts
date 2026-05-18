@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { requireBusinessAccess } from "../middlewares/business.middleware.js";
+import { checkDashboardSubscription } from "../middlewares/subscription.middleware.js";
 import authRouter from "./auth.route.js";
 import { businessRouter, ownerRouter } from "./business.route.js";
 const router = Router();
@@ -15,6 +16,6 @@ router.use("/businesses", ownerRouter);
 
 // GET/PUT /api/businesses/:businessId
 // + all sub-resources (employees, products, services, packages, expenses, stock, sales, reports)
-router.use("/businesses/:businessId", requireBusinessAccess, businessRouter);
+router.use("/businesses/:businessId", requireBusinessAccess, checkDashboardSubscription, businessRouter);
 
 export default router;

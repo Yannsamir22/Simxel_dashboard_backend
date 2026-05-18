@@ -150,3 +150,10 @@ businessRouter.delete(
   "/notifications/:id",
   NotificationController.delete as any,
 );
+
+businessRouter.get("/notifications/system-notifications", NotificationController.getSystemNotification as any);
+
+// Business context health check for the SyncStatusBadge frontend component
+businessRouter.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true, message: "Business context online." });
+});
