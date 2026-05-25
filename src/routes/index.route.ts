@@ -3,6 +3,7 @@ import { requireBusinessAccess } from "../middlewares/business.middleware.js";
 import { checkDashboardSubscription } from "../middlewares/subscription.middleware.js";
 import authRouter from "./auth.route.js";
 import { businessRouter, ownerRouter } from "./business.route.js";
+import receiptRouter from "./receipt.route.js";
 const router = Router();
 
 // POST /api/auth/register
@@ -16,6 +17,15 @@ router.use("/businesses", ownerRouter);
 
 // GET/PUT /api/businesses/:businessId
 // + all sub-resources (employees, products, services, packages, expenses, stock, sales, reports)
-router.use("/businesses/:businessId", requireBusinessAccess, checkDashboardSubscription, businessRouter);
+router.use(
+  "/businesses/:businessId",
+  requireBusinessAccess,
+  checkDashboardSubscription,
+  businessRouter,
+);
+
+// GET /api/receipts/:saleId  — public, no auth, for QR code scanning
+// Returns a fully rendered HTML receipt page viewable on any phone browser.
+router.use("/receipts", receiptRouter);
 
 export default router;

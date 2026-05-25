@@ -5,6 +5,11 @@ import { OwnerRequest } from "../types/auth.js";
 export class PackageController {
   static async getAll(req: OwnerRequest, res: Response): Promise<void> {
     const data = await PackageService.getAll(req.businessId!);
+    console.log(data.map(o => {
+      return o.packageItems.map(s => {
+        return s.service
+      })
+    }));
     res.json({ ok: true, data });
   }
   static async getById(req: OwnerRequest, res: Response): Promise<void> {
@@ -12,6 +17,7 @@ export class PackageController {
       req.businessId!,
       req.params.id as string,
     );
+
     if (!data) {
       res.status(404).json({ ok: false, error: "Package not found." });
       return;
